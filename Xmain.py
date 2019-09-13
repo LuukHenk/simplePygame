@@ -3,7 +3,6 @@
 import pygame
 import sys
 import os
-from mob import Mob
 
 """ Objects """
 
@@ -15,8 +14,6 @@ class Player(pygame.sprite.Sprite):
         self.movey = 0
         self.scalingFactor = 4
         self.frame = 0
-
-        #Load images
         self.images = []
         for i in range(1, 10):
             #Load player walking images
@@ -41,11 +38,15 @@ class Player(pygame.sprite.Sprite):
         #TODO how does this work!?
         # moving left
         if self.movex < 0:
+            # print(self.images)
             if self.movex < 0:
                 self.frame += 1
                 if self.frame > 3*ani:
                     self.frame = 0
-                self.image = self.images[(self.frame//ani)+4]
+            # self.frame -= 1
+            # if self.frame == -1:
+            #     self.frame =
+            self.image = self.images[self.frame//ani]
 
         # moving right
         if self.movex > 0:
@@ -81,11 +82,6 @@ player_list = pygame.sprite.Group()
 player_list.add(player)
 steps = 10
 
-# Constructor expects colors as Tuple (RGB[a])
-mob1 = Mob((255, 215, 0))
-mob1_list = pygame.sprite.Group()
-mob1_list.add(mob1)
-
 main = True
 
 """ Main loop """
@@ -117,7 +113,5 @@ while main:
     world.blit(backdrop, backdropbox)
     player.update()
     player_list.draw(world)
-    mob1.update()
-    mob1_list.draw(world)
     pygame.display.flip()
     clock.tick(fps)
