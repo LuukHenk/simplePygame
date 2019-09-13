@@ -4,18 +4,14 @@ import pygame
 import sys
 import os
 
-'''
-Objects
-'''
+""" Objects """
+
 # put Python classes and functions here
 class Player(pygame.sprite.Sprite):
-    '''
-    Spawn a player
-    '''
-    def __init__(self):
+    def __init__(self):  #Spawn a player
         pygame.sprite.Sprite.__init__(self)
-        self.moveX = 0
-        self.moveY = 0
+        self.movex = 0
+        self.movey = 0
         self.frame = 0
         self.images = []
         for i in range(1, 9):
@@ -24,12 +20,29 @@ class Player(pygame.sprite.Sprite):
             self.image = self.images[0]
             self.rect = self.image.get_rect()
 
-    # def control(self, x, y):
-    #     self.x +
-'''
-Setup
-'''
-# put run-once code here
+    def control(self, x, y):
+        self.movex += x
+        self.movey += y
+
+    def update(self):
+        self.rect.x = self.rect.x + self.movex
+        self.rect.y = self.rect.y + self.movey
+
+        # moving left
+        if self.movex < 0:
+            self.frame += 1
+            if self.frame > 3*ani:
+                self.frame = 0
+            self.image = self.images[self.frame//ani]
+
+        # moving right
+        if self.movex > 0:
+            self.frame += 1
+            if self.frame > 3*ani:
+                self.frame = 0
+            self.image = self.images[(self.frame//ani)+4]
+
+""" Setup """
 
 #screen coordinates
 worldx = 1000
@@ -37,7 +50,7 @@ worldy = 800
 
 #set framerate, start clock and start pygame
 fps = 60
-ani = 6
+ani = 10
 clock = pygame.time.Clock()
 pygame.init()
 
@@ -51,12 +64,12 @@ player.rect.x = 0
 player.rect.y = 0
 player_list = pygame.sprite.Group()
 player_list.add(player)
+steps = 10
 
 main = True
-'''
-Main Loop
-'''
-# put game loop here
+
+""" Main loop """
+
 while main:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -66,9 +79,9 @@ while main:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT or event.key == ord('a'):
-                print('left')
+                player.control(-steps, 0)
             if event.key == pygame.K_RIGHT or event.key == ord('d'):
-                print('right')
+                player.control(steps, 0)
             if event.key == pygame.K_UP or event.key == ord('w'):
                 print('jump')
 
@@ -78,11 +91,12 @@ while main:
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or event.key == ord('a'):
-                print('left stop')
+                player.control(steps, 0)
             if event.key == pygame.K_RIGHT or event.key == ord('d'):
-                print('right stop')
+                player.control(-steps, 0)
 
     world.blit(backdrop, backdropbox)
+    player.update()
     player_list.draw(world)
     pygame.display.flip()
     clock.tick(fps)
