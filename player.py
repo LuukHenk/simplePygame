@@ -30,8 +30,11 @@ class Player(pygame.sprite.Sprite):
         self.movey += y
 
     def update(self):
+        ani = 10
+
         self.rect.x = self.rect.x + self.movex
         self.rect.y = self.rect.y + self.movey
+
         #TODO how does this work!?
         # moving left
         if self.movex < 0:
@@ -47,3 +50,16 @@ class Player(pygame.sprite.Sprite):
             if self.frame > 3*ani:
                 self.frame = 0
             self.image = self.images[(self.frame//ani)+4]
+
+class HealthBar(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        emptyHeart = pygame.transform.scale(pygame.image.load('images/healthbar/emptyheart.png'), [50, 50])
+        fullHeart = pygame.transform.scale(pygame.image.load('images/healthbar/fullheart.png'), [50, 50])
+        # Todo : Draw multiple hearts, preferably in container
+        self.healthcontainer = [fullHeart, fullHeart, fullHeart]
+        self.health = 3
+        self.image = fullHeart
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0

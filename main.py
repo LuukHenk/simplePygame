@@ -3,7 +3,7 @@
 import pygame
 import sys
 import os
-from player import Player
+from player import Player, HealthBar
 from mob import Mob
 
 """ Setup """
@@ -13,7 +13,6 @@ screenSize = (1000, 800)
 
 #set framerate, start clock and start pygame
 fps = 60
-ani = 10
 clock = pygame.time.Clock()
 pygame.init()
 
@@ -32,6 +31,10 @@ player.rect.y = screenSize[1] - player.size[1] + 10
 player_list = pygame.sprite.Group()
 player_list.add(player)
 steps = 10
+
+healthbar = HealthBar()
+healthbar_list = pygame.sprite.Group()
+healthbar_list.add(healthbar)
 
 # Constructor expects colors as Tuple (RGB[a])
 mob1 = Mob((255, 215, 0))
@@ -69,6 +72,7 @@ while main:
     world.blit(backdrop, backdropbox)
     player.update()
     player_list.draw(world)
+    healthbar_list.draw(world)
     mob1.update()
     mob1_list.draw(world)
     pygame.display.flip()
