@@ -12,22 +12,30 @@ class Player(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.movex = 0
         self.movey = 0
+        self.scalingFactor = 4
         self.frame = 0
         self.images = []
         for i in range(1, 9):
+            #Load player walking images
             img = pygame.image.load(os.path.join('images', 'Walk' + str(i) + '.png'))
+            #rescale player image
+            img = pygame.transform.scale(img, (int(img.get_size()[0] / self.scalingFactor),
+                int(img.get_size()[1] / self.scalingFactor)))
             self.images.append(img)
             self.image = self.images[0]
             self.rect = self.image.get_rect()
 
+        self.size = self.images[0].get_size()
+
     def control(self, x, y):
+        #TODO player should not walk further than the end of the screen
         self.movex += x
         self.movey += y
 
     def update(self):
         self.rect.x = self.rect.x + self.movex
         self.rect.y = self.rect.y + self.movey
-
+        #TODO how does this work!?
         # moving left
         if self.movex < 0:
             self.frame += 1
@@ -45,8 +53,7 @@ class Player(pygame.sprite.Sprite):
 """ Setup """
 
 #screen coordinates
-worldx = 1000
-worldy = 800
+screenSize = (1000, 800)
 
 #set framerate, start clock and start pygame
 fps = 60
@@ -54,14 +61,20 @@ ani = 10
 clock = pygame.time.Clock()
 pygame.init()
 
-#setting the background
-world = pygame.display.set_mode([worldx, worldy])
+#set screen size
+world = pygame.display.set_mode(screenSize)
+#load background
 backdrop = pygame.image.load(os.path.join('images', 'stage.png'))
+backdrop = pygame.transform.scale(backdrop, screenSize)
 backdropbox = world.get_rect()
 
 player = Player()
-player.rect.x = 0
-player.rect.y = 0
+# print(player.images[0].get_size())
+# for image in player.images:
+#     print(image.get_size())
+print(int(screenSize[1]))
+player.rect.x = screenSize[0] / 2 - player.size[0] / 2
+player.rect.y = screenSize[1] - player.size[1] + 10
 player_list = pygame.sprite.Group()
 player_list.add(player)
 steps = 10
@@ -75,7 +88,6 @@ while main:
         if event.type == pygame.QUIT:
             pygame.quit(); sys.exit()
             main = False
-
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT or event.key == ord('a'):
@@ -94,7 +106,7 @@ while main:
                 player.control(steps, 0)
             if event.key == pygame.K_RIGHT or event.key == ord('d'):
                 player.control(-steps, 0)
-
+        # print(player.movex)
     world.blit(backdrop, backdropbox)
     player.update()
     player_list.draw(world)
