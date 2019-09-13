@@ -3,6 +3,7 @@
 import pygame
 import sys
 import os
+from mob import Mob
 
 """ Objects """
 
@@ -82,6 +83,11 @@ player_list = pygame.sprite.Group()
 player_list.add(player)
 steps = 10
 
+# Constructor expects colors as Tuple (RGB[a])
+mob1 = Mob((255, 215, 0))
+mob1_list = pygame.sprite.Group()
+mob1_list.add(mob1)
+
 main = True
 
 """ Main loop """
@@ -113,5 +119,7 @@ while main:
     world.blit(backdrop, backdropbox)
     player.update()
     player_list.draw(world)
+    mob1.update()
+    mob1_list.draw(world)
     pygame.display.flip()
     clock.tick(fps)

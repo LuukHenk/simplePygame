@@ -1,1 +1,6 @@
+# Modules & Folders
 /usefullStuff
+/__pycache__
+
+# Dotfiles
+.DS_Store
