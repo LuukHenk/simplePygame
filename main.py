@@ -38,9 +38,14 @@ class Player(pygame.sprite.Sprite):
         #TODO how does this work!?
         # moving left
         if self.movex < 0:
-            self.frame += 1
-            if self.frame > 3*ani:
-                self.frame = 0
+            # print(self.images)
+            if self.movex < 0:
+                self.frame += 1
+                if self.frame > 3*ani:
+                    self.frame = 0
+            # self.frame -= 1
+            # if self.frame == -1:
+            #     self.frame =
             self.image = self.images[self.frame//ani]
 
         # moving right
@@ -63,16 +68,14 @@ pygame.init()
 
 #set screen size
 world = pygame.display.set_mode(screenSize)
-#load background
+
+#load and scale background
 backdrop = pygame.image.load(os.path.join('images', 'stage.png'))
 backdrop = pygame.transform.scale(backdrop, screenSize)
 backdropbox = world.get_rect()
 
+#Load player and set positions
 player = Player()
-# print(player.images[0].get_size())
-# for image in player.images:
-#     print(image.get_size())
-print(int(screenSize[1]))
 player.rect.x = screenSize[0] / 2 - player.size[0] / 2
 player.rect.y = screenSize[1] - player.size[1] + 10
 player_list = pygame.sprite.Group()
@@ -106,7 +109,7 @@ while main:
                 player.control(steps, 0)
             if event.key == pygame.K_RIGHT or event.key == ord('d'):
                 player.control(-steps, 0)
-        # print(player.movex)
+
     world.blit(backdrop, backdropbox)
     player.update()
     player_list.draw(world)
