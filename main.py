@@ -1,14 +1,14 @@
-#!/usr/bin/env python3
+-#!/usr/bin/env python3
 
 import pygame
 import sys
 import os
 
-
 """ Setup """
 
+
 #Settle screen coordinates
-screenSize = (1000, 800)
+screenSize = (960, 960)
 world = pygame.display.set_mode(screenSize)
 
 #settle framerate and start clock
@@ -45,12 +45,12 @@ def checkCollision(a, b):
         return(True)
 
 #check on which site of an object collision occurs (if collision occurs),
-def collisionSite(a, b):
+def collisionSiteCheck(a, b):
     distanceOfCollision = {
-        'left': abs(a.coordinates[0] - b.coordinates[0] + b.size[0]),
-        'right': abs(a.coordinates[0] + a.size[0] - b.coordinates[0]),
-        'down': abs(a.coordinates[1] + a.size[1] - b.coordinates[1]),
-        'up': abs(a.coordinates[1] - b.coordinates[1] + b.size[1])
+        'left': abs(a.coordinates[0] - (b.coordinates[0] + b.size[0])),
+        'right': abs((a.coordinates[0] + a.size[0]) - b.coordinates[0]),
+        'down': abs((a.coordinates[1] + a.size[1]) - b.coordinates[1]),
+        'up': abs(a.coordinates[1] - (b.coordinates[1] + b.size[1]))
     }
     return(min(distanceOfCollision, key=distanceOfCollision.get))
 
@@ -68,7 +68,6 @@ class spawnPlayer(pygame.sprite.Sprite):
 
         ##settle player size based on screen size
         #self.size = self.walkingImages[0].get_size()
-        #TODO set player size based on screensize
         # self.size = (self.size[0] / screenSize[0] * 100,
         #              self.size[1] / screenSize[1] * 100)
 
@@ -87,66 +86,43 @@ class spawnPlayer(pygame.sprite.Sprite):
         self.speed = 2.5
         self.speed = self.size[0] / 10 * self.speed
 
-        #settle jumping height based on player height
-        # self.jumpingPower = 0.02
-        # self.jumpingPower = self.size[1] / 10 * self.jumpingPower
-        # self.jumpingSpeed = 0
-
-
+        self.isJumping = False
+        self.isFalling = True
+        self.standardForce = 7
+        self.force = self.standardForce
+        self.mass = 2
 
         #settle possible movements
         self.possibleMovements = ['left', 'right', 'down', 'up']
-
-        self.action = ''
-
-        self.isJumping = False
-        self.isFalling = True
-        self.standardForce = 8
-        self.force = self.standardForce
-        self.mass = 2
 
     def handleKeys(self, keybinds):
         #check for pressed keys
         keys = pygame.key.get_pressed()
 
-        #move to the left
         if 'left' in self.possibleMovements:
             for k in keybinds['left']:
                 if keys[k]:
                     self.coordinates[0] -= self.speed
 
-        #move to the right
         if 'right' in self.possibleMovements:
             for k in keybinds['right']:
                 if keys[k]:
                     self.coordinates[0] += self.speed
 
-        #TODO add jump
-            #DONE: add player movement using the y coordinates
-            #DONE: add floors
-            #DONE add collision
-            #DONE add gravity
-            #make sure player doesnt jump through floors and walls
-                #fix collision site
         if 'up' in self.possibleMovements:
             for k in keybinds['up']:
                 if keys[k]:
                     self.isJumping = True
-                    # self.coordinates[1] -= self.jumpingPower
 
         if self.isJumping == True:
             if self.force > 0:
                 F = (0.5 * self.mass * self.force ** 2)
+
             else:
                 F = -(0.5 * self.mass * self.force ** 2)
 
             self.coordinates[1] -= F
             self.force -= 1
-        #TODO eventually replace down movement with gravity
-        if 'down' in self.possibleMovements:
-            for k in keybinds['down']:
-                if keys[k]:
-                    self.coordinates[1] += self.speed
 
 class spawnFloor(pygame.sprite.Sprite):
     def __init__(self, size, coordinates, screenSize):
@@ -161,11 +137,11 @@ class spawnFloor(pygame.sprite.Sprite):
         self.image.fill(self.color)
         self.rect = self.image.get_rect(topleft = self.coordinates)
 
-#spawn floor
 #set basefloor
 baseSize = 10
 base = screenSize[1] - baseSize
 
+#spawn floors
 floors = pygame.sprite.Group()
 floors.add(spawnFloor((screenSize[0], baseSize), (0, base), screenSize))
 floors.add(spawnFloor((100, 10), (100, screenSize[1] - 100), screenSize))
@@ -175,6 +151,37 @@ floors.add(spawnFloor((200, 10), (500, screenSize[1] - 100), screenSize))
 player = spawnPlayer(screenSize)
 players = pygame.sprite.Group()
 players.add(player)
+
+#development tools
+class dev():
+    def __init__(self):
+        pass
+
+    def collision(self, a, b, side):
+        a.coordinates = [int(a.coordinates[0]), int(a.coordinates[1])]
+        a.size = [int(a.size[0]), int(a.size[1])]
+        b.coordinates = [int(b.coordinates[0]), int(b.coordinates[1])]
+        b.size = [int(b.size[0]), int(b.size[1])]
+        print('**************************')
+        if side == 'left':
+            print(side, ' | ', a.coordinates[0], ' | ',  b.coordinates[0] + b.size[0], ' | ', \
+                    abs(a.coordinates[0] - (b.coordinates[0] + b.size[0])))
+
+        elif side == 'right':
+            print(side, ' | ', a.coordinates[0] + a.size[0], ' | ',  b.coordinates[0], ' | ', \
+                    abs(a.coordinates[0] + a.size[0] - b.coordinates[0]))
+
+        elif side == 'down':
+            print(side, ' | ', a.coordinates[1] + a.size[1], ' | ',  b.coordinates[1], ' | ', \
+                    abs(a.coordinates[1] + a.size[1] - b.coordinates[1]))
+
+        elif side == 'up':
+            print(side, ' | ', a.coordinates[1], ' | ',  b.coordinates[1] + b.size[1], ' | ', \
+                    abs(a.coordinates[1] - (b.coordinates[1] + b.size[1])))
+        else:
+            print('none', ' | ', 000, ' | ', 000, '|', 000)
+
+tests = dev()
 
 """ Main loop """
 while main:
@@ -192,8 +199,6 @@ while main:
 
         #check if player quits the game using keys
         if event.type == pygame.KEYDOWN:
-
-            # if event.key in keybinds['close']:
             for k in keybinds['close']:
                 if event.key == k:
                     pygame.quit()
@@ -210,34 +215,44 @@ while main:
 
     for p in players:
         p.possibleMovements = ['left', 'right', 'down', 'up']
-
         onFloor = False
+        print(p.force)
 
         #check if the player is on the floor
         for i, f in enumerate(floors):
             collision = checkCollision(p, f)
+            collisionSite = collisionSiteCheck(p, f)
 
-            #if player is in the floor
             if collision:
-                #player cannot go down
-                if p.coordinates[1] + p.size[1] > f.coordinates[1]:
+                p.possibleMovements.remove(collisionSite)
+                p.isJumping = False
+
+                if collisionSite == 'down':
+                    onFloor = True
                     p.coordinates[1] = f.coordinates[1] - p.size[1]
 
-                #player is not jumping
-                p.isJumping = False
-                onFloor = True
-                #force is resetted
-                p.force = p.standardForce
+                elif collisionSite == 'up':
+                    p.coordinates[1] = f.coordinates[1] + f.size[1] + 1
 
-        if p.coordinates[1] >= base:
-            p.coordinates[1] = base
+                elif collisionSite == 'left':
+                    p.coordinates[0] = f.coordinates[0] + f.size[0] + 1
+
+                elif collisionSite == 'right':
+                    p.coordinates[0] = f.coordinates[0] - p.size[0] - 1
+
+                if onFloor == True:
+                    #force is resetted
+                    p.force = p.standardForce
+
+        if p.coordinates[1] > base:
+            p.coordinates[1] = base - p.size[1]
             p.isJumping = False
             onFloor = True
             p.force = p.standardForce
 
         if onFloor == False and p.isJumping == False:
             if p.force > 0:
-                p.force = 0
+                p.force = -1
             else:
                 F = -(0.5 * p.mass * p.force ** 2)
                 p.coordinates[1] -= F
@@ -253,3 +268,4 @@ while main:
     pygame.display.flip()
     lastTick = tick
     clock.tick(fps)
+
