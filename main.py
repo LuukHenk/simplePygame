@@ -1,4 +1,4 @@
--#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import pygame
 import sys
@@ -62,25 +62,16 @@ class spawnPlayer(pygame.sprite.Sprite):
         #settle color (RGB[a])
         self.color = (255, 255, 255)
 
-        #load and set image
-        #TODO add player image and fix availability in other dirs
-        #TODO set player size based on screensize
-
-        ##settle player size based on screen size
-        #self.size = self.walkingImages[0].get_size()
-        # self.size = (self.size[0] / screenSize[0] * 100,
-        #              self.size[1] / screenSize[1] * 100)
-
         self.size = (50, 50)
+
         #set coordinates of the player
         self.coordinates = [screenSize[0] / 2 - self.size[0] / 2,
                             screenSize[1] / 2 - self.size[1] / 2]
-        # self.coordinates = [screenSize[0] / 2 - self.size[0] / 2, screenSize[1] - self.size[1] + 1]
 
+        #create image
         self.image = pygame.Surface(self.size)
         self.image.fill(self.color)
         self.rect = self.image.get_rect(topleft = tuple(self.coordinates))
-        # self.rect = self.walkingImage.get_rect(topleft=tuple(self.coordinates))
 
         #settle player speed based on player width
         self.speed = 2.5
@@ -152,38 +143,8 @@ player = spawnPlayer(screenSize)
 players = pygame.sprite.Group()
 players.add(player)
 
-#development tools
-class dev():
-    def __init__(self):
-        pass
-
-    def collision(self, a, b, side):
-        a.coordinates = [int(a.coordinates[0]), int(a.coordinates[1])]
-        a.size = [int(a.size[0]), int(a.size[1])]
-        b.coordinates = [int(b.coordinates[0]), int(b.coordinates[1])]
-        b.size = [int(b.size[0]), int(b.size[1])]
-        print('**************************')
-        if side == 'left':
-            print(side, ' | ', a.coordinates[0], ' | ',  b.coordinates[0] + b.size[0], ' | ', \
-                    abs(a.coordinates[0] - (b.coordinates[0] + b.size[0])))
-
-        elif side == 'right':
-            print(side, ' | ', a.coordinates[0] + a.size[0], ' | ',  b.coordinates[0], ' | ', \
-                    abs(a.coordinates[0] + a.size[0] - b.coordinates[0]))
-
-        elif side == 'down':
-            print(side, ' | ', a.coordinates[1] + a.size[1], ' | ',  b.coordinates[1], ' | ', \
-                    abs(a.coordinates[1] + a.size[1] - b.coordinates[1]))
-
-        elif side == 'up':
-            print(side, ' | ', a.coordinates[1], ' | ',  b.coordinates[1] + b.size[1], ' | ', \
-                    abs(a.coordinates[1] - (b.coordinates[1] + b.size[1])))
-        else:
-            print('none', ' | ', 000, ' | ', 000, '|', 000)
-
-tests = dev()
-
 """ Main loop """
+
 while main:
     tick = pygame.time.get_ticks()
     dt = tick - lastTick
@@ -209,14 +170,12 @@ while main:
     world.blit(backdrop, backdropbox)
 
     #draw floors on screen
-    #TODO change floors to objects and add floor into objects
     for f in floors:
         world.blit(f.image, f.coordinates)
 
     for p in players:
         p.possibleMovements = ['left', 'right', 'down', 'up']
         onFloor = False
-        print(p.force)
 
         #check if the player is on the floor
         for i, f in enumerate(floors):
@@ -224,9 +183,11 @@ while main:
             collisionSite = collisionSiteCheck(p, f)
 
             if collision:
+                #player cannot move towards the collision site anymore and stops jumping
                 p.possibleMovements.remove(collisionSite)
                 p.isJumping = False
 
+                #when collision occurs, make sure the player does not get in the object
                 if collisionSite == 'down':
                     onFloor = True
                     p.coordinates[1] = f.coordinates[1] - p.size[1]
@@ -240,16 +201,18 @@ while main:
                 elif collisionSite == 'right':
                     p.coordinates[0] = f.coordinates[0] - p.size[0] - 1
 
+                #force is resetted whem player is on the floor
                 if onFloor == True:
-                    #force is resetted
                     p.force = p.standardForce
 
+        #make sure player does not get below the base floor
         if p.coordinates[1] > base:
             p.coordinates[1] = base - p.size[1]
             p.isJumping = False
             onFloor = True
             p.force = p.standardForce
 
+        #player falls when not on floor and not jumping
         if onFloor == False and p.isJumping == False:
             if p.force > 0:
                 p.force = -1
