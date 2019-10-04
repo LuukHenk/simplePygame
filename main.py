@@ -104,15 +104,12 @@ class spawnPlayer(pygame.sprite.Sprite):
             for k in keybinds['up']:
                 if keys[k]:
                     self.isJumping = True
+        else:
+            self.isJumping = False
 
         if self.isJumping == True:
-            if self.force > 0:
-                F = (0.5 * self.mass * self.force ** 2)
-
-            else:
-                F = -(0.5 * self.mass * self.force ** 2)
-
-            self.coordinates[1] -= F
+            F = (0.5 * self.mass * self.force ** 2)
+            self.coordinates[1] -= F if self.force > 0 else -F
             self.force -= 1
 
 class spawnFloor(pygame.sprite.Sprite):
