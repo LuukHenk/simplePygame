@@ -6,6 +6,10 @@ import os
 
 """ Setup """
 
+mainFile = os.path.realpath(__file__)
+mainDir = os.path.dirname(mainFile)
+imagesDir = os.path.join(mainDir, 'images')
+
 
 #Settle screen coordinates
 screenSize = (960, 960)
@@ -24,7 +28,7 @@ pygame.init()
 main = True
 
 #load and scale background
-backdrop = pygame.image.load(os.path.join('images', 'stage.png'))
+backdrop = pygame.image.load(os.path.join(imagesDir, 'stage.png'))
 backdrop = pygame.transform.scale(backdrop, screenSize)
 backdropbox = world.get_rect()
 
@@ -54,6 +58,15 @@ def collisionSiteCheck(a, b):
     }
     return(min(distanceOfCollision, key=distanceOfCollision.get))
 
+def loadImageSet(size, filename, datatype, scalingFactor):
+    imageSet = []
+    for i in range(size):
+        img = pygame.image.load(filename + str(i + 1) + datatype)
+        img = pygame.transform.scale(img, (int(img.get_size()[0] * scalingFactor), \
+                int(img.get_size()[1] * scalingFactor)))
+        imageSet.append(img)
+    return(imageSet)
+
 #create player
 class spawnPlayer(pygame.sprite.Sprite):
     def __init__(self, screenSize):
@@ -61,22 +74,54 @@ class spawnPlayer(pygame.sprite.Sprite):
 
         #settle color (RGB[a])
         self.color = (255, 255, 255)
+        #load images
+        self.imagesDir = os.path.join(imagesDir, 'player')
+        self.images = {}
+        self.scalingFactor = 0.13
 
-        self.size = (50, 50)
+        self.walkingImagesDir = os.path.join(self.imagesDir, 'walking')
+        self.walkingImagesFilename = os.path.join(self.walkingImagesDir, 'Walk (')
+        self.walkingImagesDatatype = ').png'
+        self.walkingFrames = 10
+        self.currentWalkingFrame = 0
+        self.walkingImages = loadImageSet(self.walkingFrames, self.walkingImagesFilename,\
+                self.walkingImagesDatatype, self.scalingFactor)
+
+
+        self.idleImagesDir = os.path.join(self.imagesDir, 'idle')
+        self.idleImagesFilename = os.path.join(self.idleImagesDir, 'Idle (')
+        self.idleImagesDatatype = ').png'
+        self.idleFrames = 10
+        self.currentIdleFrame = 0
+        self.idleImages = loadImageSet(self.idleFrames, self.idleImagesFilename,\
+                self.idleImagesDatatype, self.scalingFactor)
+
+        self.jumpingImagesDir = os.path.join(self.imagesDir, 'jumping')
+        self.jumpingImagesFilename = os.path.join(self.jumpingImagesDir, 'Jump (')
+        self.jumpingImagesDatatype = ').png'
+        self.jumpingFrames = 12
+        self.currentJumpingFrame = 0
+        self.jumpingImages = loadImageSet(self.jumpingFrames, self.jumpingImagesFilename,\
+                self.jumpingImagesDatatype, self.scalingFactor)
+
+        self.image = self.idleImages[0]
+        self.size = self.walkingImages[0].get_size()
+        self.testImage = pygame.Surface(self.size)
+        self.testImage.fill((0, 0, 0))
+        self.rect = self.image.get_rect()
 
         #set coordinates of the player
         self.coordinates = [screenSize[0] / 2 - self.size[0] / 2,
                             screenSize[1] / 2 - self.size[1] / 2]
 
-        #create image
-        self.image = pygame.Surface(self.size)
-        self.image.fill(self.color)
         self.rect = self.image.get_rect(topleft = tuple(self.coordinates))
+        # self.rect = self.walkingImage.get_rect(topleft=tuple(self.coordinates))
 
         #settle player speed based on player width
-        self.speed = 2.5
+        self.speed = 1
         self.speed = self.size[0] / 10 * self.speed
 
+        #Set jumping and falling settings
         self.isJumping = False
         self.isFalling = True
         self.standardForce = 7
@@ -89,16 +134,20 @@ class spawnPlayer(pygame.sprite.Sprite):
     def handleKeys(self, keybinds):
         #check for pressed keys
         keys = pygame.key.get_pressed()
+        changeWalkingFrame = False
 
+        #TODO if left and right both are pressed, stop walking
         if 'left' in self.possibleMovements:
             for k in keybinds['left']:
                 if keys[k]:
                     self.coordinates[0] -= self.speed
+                    changeWalkingFrame = True
 
         if 'right' in self.possibleMovements:
             for k in keybinds['right']:
                 if keys[k]:
                     self.coordinates[0] += self.speed
+                    changeWalkingFrame = True
 
         if 'up' in self.possibleMovements:
             for k in keybinds['up']:
@@ -107,10 +156,41 @@ class spawnPlayer(pygame.sprite.Sprite):
         else:
             self.isJumping = False
 
-        if self.isJumping == True:
-            F = (0.5 * self.mass * self.force ** 2)
-            self.coordinates[1] -= F if self.force > 0 else -F
-            self.force -= 1
+        if changeWalkingFrame == True:
+            if self.currentWalkingFrame + 1 >= self.walkingFrames:
+                self.currentWalkingFrame = 0
+            else:
+                self.currentWalkingFrame += 1
+
+            self.image = self.walkingImages[self.currentWalkingFrame]
+
+        elif self.isJumping == True:
+            print(self.force)
+            if self.force > 0:
+                F = (0.5 * self.mass * self.force ** 2)
+                self.coordinates[1] -= F
+                self.force -= 1
+
+            else:
+                self.isJumping = False
+
+
+            if self.currentJumpingFrame + 1 < self.jumpingFrames:
+                self.currentJumpingFrame += 1
+
+            self.image = self.jumpingImages[self.currentJumpingFrame]
+
+        else:
+            if self.currentIdleFrame + 1 >= self.idleFrames:
+                self.currentIdleFrame = 0
+            else:
+                self.currentIdleFrame += 1
+
+            self.image = self.idleImages[self.currentIdleFrame]
+
+        if self.isJumping == False:
+            self.currentJumpingFrame = 0
+
 
 class spawnFloor(pygame.sprite.Sprite):
     def __init__(self, size, coordinates, screenSize):
@@ -140,8 +220,38 @@ player = spawnPlayer(screenSize)
 players = pygame.sprite.Group()
 players.add(player)
 
-""" Main loop """
+#development tools
+class dev():
+    def __init__(self):
+        pass
 
+    def collision(self, a, b, side):
+        a.coordinates = [int(a.coordinates[0]), int(a.coordinates[1])]
+        a.size = [int(a.size[0]), int(a.size[1])]
+        b.coordinates = [int(b.coordinates[0]), int(b.coordinates[1])]
+        b.size = [int(b.size[0]), int(b.size[1])]
+        print('**************************')
+        if side == 'left':
+            print(side, ' | ', a.coordinates[0], ' | ',  b.coordinates[0] + b.size[0], ' | ', \
+                    abs(a.coordinates[0] - (b.coordinates[0] + b.size[0])))
+
+        elif side == 'right':
+            print(side, ' | ', a.coordinates[0] + a.size[0], ' | ',  b.coordinates[0], ' | ', \
+                    abs(a.coordinates[0] + a.size[0] - b.coordinates[0]))
+
+        elif side == 'down':
+            print(side, ' | ', a.coordinates[1] + a.size[1], ' | ',  b.coordinates[1], ' | ', \
+                    abs(a.coordinates[1] + a.size[1] - b.coordinates[1]))
+
+        elif side == 'up':
+            print(side, ' | ', a.coordinates[1], ' | ',  b.coordinates[1] + b.size[1], ' | ', \
+                    abs(a.coordinates[1] - (b.coordinates[1] + b.size[1])))
+        else:
+            print('none', ' | ', 000, ' | ', 000, '|', 000)
+
+tests = dev()
+
+""" Main loop """
 while main:
     tick = pygame.time.get_ticks()
     dt = tick - lastTick
@@ -167,6 +277,7 @@ while main:
     world.blit(backdrop, backdropbox)
 
     #draw floors on screen
+    #TODO change floors to objects and add floor into objects
     for f in floors:
         world.blit(f.image, f.coordinates)
 
@@ -219,7 +330,9 @@ while main:
                 p.force -= 1
 
         #draw player on the screen
+        world.blit(p.testImage, p.coordinates)
         world.blit(p.image, p.coordinates)
+
 
         #handle playermovement
         p.handleKeys(keybinds)
