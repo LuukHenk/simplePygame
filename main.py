@@ -3,6 +3,8 @@
 import pygame
 import sys
 import os
+import glob
+import re
 
 """ Setup """
 
@@ -18,6 +20,7 @@ world = pygame.display.set_mode(screenSize)
 #settle framerate and start clock
 fps = 60
 
+directions = ('left', 'right', 'down', 'up')
 gravity = 2
 
 clock = pygame.time.Clock()
@@ -50,24 +53,26 @@ def checkCollision(a, b):
 
 #check on which site of an object collision occurs (if collision occurs),
 def collisionSiteCheck(a, b):
-    distanceOfCollision = {
-        'left': abs(a.coordinates[0] - (b.coordinates[0] + b.size[0])),
-        'right': abs((a.coordinates[0] + a.size[0]) - b.coordinates[0]),
-        'down': abs((a.coordinates[1] + a.size[1]) - b.coordinates[1]),
-        'up': abs(a.coordinates[1] - (b.coordinates[1] + b.size[1]))
-    }
-    return(min(distanceOfCollision, key=distanceOfCollision.get))
+    x = (abs(a.coordinates[0] - (b.coordinates[0] + b.size[0])),
+         abs((a.coordinates[0] + a.size[0]) - b.coordinates[0]),
+         abs((a.coordinates[1] + a.size[1]) - b.coordinates[1]),
+         abs(a.coordinates[1] - (b.coordinates[1] + b.size[1])))
 
-def loadImageSet(size, filename, datatype, scalingFactor):
+    return(directions[x.index(min(x))])
+
+def getImages(relativePath, scalingFactor):
+    images = glob.glob(os.path.join(imagesDir, relativePath))
+    images = sorted(images, key = lambda f: int(re.findall("\((\d+)\)\.png", f)[0]))
     imageSet = []
-    for i in range(size):
-        img = pygame.image.load(filename + str(i + 1) + datatype)
+    for image in images:
+        img = pygame.image.load(image)
         img = pygame.transform.scale(img, (int(img.get_size()[0] * scalingFactor), \
                 int(img.get_size()[1] * scalingFactor)))
         imageSet.append(img)
     return(imageSet)
 
 #create player
+#TODO rename spawnPlayer to player
 class spawnPlayer(pygame.sprite.Sprite):
     def __init__(self, screenSize):
         pygame.sprite.Sprite.__init__(self)
@@ -79,33 +84,22 @@ class spawnPlayer(pygame.sprite.Sprite):
         self.images = {}
         self.scalingFactor = 0.13
 
-        self.walkingImagesDir = os.path.join(self.imagesDir, 'walking')
-        self.walkingImagesFilename = os.path.join(self.walkingImagesDir, 'Walk (')
-        self.walkingImagesDatatype = ').png'
-        self.walkingFrames = 10
+        self.walkingImages = getImages('player/walking/*.png', self.scalingFactor)
+        self.walkingFrames = len(self.walkingImages)
         self.currentWalkingFrame = 0
-        self.walkingImages = loadImageSet(self.walkingFrames, self.walkingImagesFilename,\
-                self.walkingImagesDatatype, self.scalingFactor)
 
-
-        self.idleImagesDir = os.path.join(self.imagesDir, 'idle')
-        self.idleImagesFilename = os.path.join(self.idleImagesDir, 'Idle (')
-        self.idleImagesDatatype = ').png'
-        self.idleFrames = 10
+        self.idleImages = getImages('player/idle/*.png', self.scalingFactor)
+        self.idleFrames = len(self.idleImages)
         self.currentIdleFrame = 0
-        self.idleImages = loadImageSet(self.idleFrames, self.idleImagesFilename,\
-                self.idleImagesDatatype, self.scalingFactor)
 
-        self.jumpingImagesDir = os.path.join(self.imagesDir, 'jumping')
-        self.jumpingImagesFilename = os.path.join(self.jumpingImagesDir, 'Jump (')
-        self.jumpingImagesDatatype = ').png'
-        self.jumpingFrames = 12
+        self.jumpingImages = getImages('player/jumping/*.png', self.scalingFactor)
+        self.jumpingFrames = len(self.jumpingImages)
         self.currentJumpingFrame = 0
-        self.jumpingImages = loadImageSet(self.jumpingFrames, self.jumpingImagesFilename,\
-                self.jumpingImagesDatatype, self.scalingFactor)
 
         self.image = self.idleImages[0]
-        self.size = self.walkingImages[0].get_size()
+        self.size = self.idleImages[0].get_size()
+
+        #TODO move to dev class as object bounderies visualisation
         self.testImage = pygame.Surface(self.size)
         self.testImage.fill((0, 0, 0))
         self.rect = self.image.get_rect()
@@ -165,7 +159,6 @@ class spawnPlayer(pygame.sprite.Sprite):
             self.image = self.walkingImages[self.currentWalkingFrame]
 
         elif self.isJumping == True:
-            print(self.force)
             if self.force > 0:
                 F = (0.5 * self.mass * self.force ** 2)
                 self.coordinates[1] -= F
@@ -330,7 +323,6 @@ while main:
                 p.force -= 1
 
         #draw player on the screen
-        world.blit(p.testImage, p.coordinates)
         world.blit(p.image, p.coordinates)
 
 
