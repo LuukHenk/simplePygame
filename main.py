@@ -150,15 +150,7 @@ class spawnPlayer(pygame.sprite.Sprite):
         else:
             self.isJumping = False
 
-        if changeWalkingFrame == True:
-            if self.currentWalkingFrame + 1 >= self.walkingFrames:
-                self.currentWalkingFrame = 0
-            else:
-                self.currentWalkingFrame += 1
-
-            self.image = self.walkingImages[self.currentWalkingFrame]
-
-        elif self.isJumping == True:
+        if self.isJumping == True:
             if self.force > 0:
                 F = (0.5 * self.mass * self.force ** 2)
                 self.coordinates[1] -= F
@@ -167,11 +159,24 @@ class spawnPlayer(pygame.sprite.Sprite):
             else:
                 self.isJumping = False
 
+        if self.isJumping == False:
+            self.currentJumpingFrame = 0
 
-            if self.currentJumpingFrame + 1 < self.jumpingFrames:
-                self.currentJumpingFrame += 1
+        if changeWalkingFrame == True:
+            if self.currentWalkingFrame + 1 >= self.walkingFrames:
+                self.currentWalkingFrame = 0
+            else:
+                self.currentWalkingFrame += 1
 
-            self.image = self.jumpingImages[self.currentJumpingFrame]
+            #TODO self.image uit deze loop halen
+            if self.isJumping == False:
+                self.image = self.walkingImages[self.currentWalkingFrame]
+
+            else:
+                if self.currentJumpingFrame + 1 < self.jumpingFrames:
+                    self.currentJumpingFrame += 1
+
+                self.image = self.jumpingImages[self.currentJumpingFrame]
 
         else:
             if self.currentIdleFrame + 1 >= self.idleFrames:
@@ -180,10 +185,6 @@ class spawnPlayer(pygame.sprite.Sprite):
                 self.currentIdleFrame += 1
 
             self.image = self.idleImages[self.currentIdleFrame]
-
-        if self.isJumping == False:
-            self.currentJumpingFrame = 0
-
 
 class spawnFloor(pygame.sprite.Sprite):
     def __init__(self, size, coordinates, screenSize):
