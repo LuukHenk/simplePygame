@@ -45,10 +45,11 @@ keybinds['close'] = [pygame.K_ESCAPE, ord('q')]
 
 #check for collision between 2 objects
 def checkCollision(a, b):
-    if (a.coordinates[0] + a.size[0] >= b.coordinates[0] and
-        a.coordinates[0] <= b.coordinates[0] + b.size[0] and
-        a.coordinates[1] + a.size[1] >= b.coordinates[1] and
+    if (a.coordinates[0] + a.size[0] >= b.coordinates[0] and \
+        a.coordinates[0] <= b.coordinates[0] + b.size[0] and \
+        a.coordinates[1] + a.size[1] >= b.coordinates[1] and \
         a.coordinates[1] <= b.coordinates[1] + b.size[1]):
+
         return(True)
 
 #check on which site of an object collision occurs (if collision occurs),
@@ -62,7 +63,7 @@ def collisionSiteCheck(a, b):
 
 def getImages(relativePath, scalingFactor):
     images = glob.glob(os.path.join(imagesDir, relativePath))
-    images = sorted(images, key = lambda f: int(re.findall("\((\d+)\)\.png", f)[0]))
+    images = sorted(images, key=lambda f: int(re.findall("\((\d+)\)\.png", f)[0]))
     imageSet = []
     for image in images:
         img = pygame.image.load(image)
@@ -116,7 +117,7 @@ class spawnPlayer(pygame.sprite.Sprite):
         self.speed = self.size[0] / 10 * self.speed
 
         #Set jumping and falling settings
-        self.isJumping = False
+        self.jumping = False
         self.isFalling = True
         self.standardForce = 7
         self.force = self.standardForce
@@ -128,59 +129,55 @@ class spawnPlayer(pygame.sprite.Sprite):
     def handleKeys(self, keybinds):
         #check for pressed keys
         keys = pygame.key.get_pressed()
-        changeWalkingFrame = False
+        walking = False
 
         #TODO if left and right both are pressed, stop walking
-        if 'left' in self.possibleMovements:
-            for k in keybinds['left']:
-                if keys[k]:
-                    self.coordinates[0] -= self.speed
-                    changeWalkingFrame = True
+        for k in keybinds['left']:
+            if keys[k]:
+                self.coordinates[0] -= self.speed
+                walking = True
 
-        if 'right' in self.possibleMovements:
-            for k in keybinds['right']:
-                if keys[k]:
-                    self.coordinates[0] += self.speed
-                    changeWalkingFrame = True
+        for k in keybinds['right']:
+            if keys[k]:
+                self.coordinates[0] += self.speed
+                walking = True
 
-        if 'up' in self.possibleMovements:
-            for k in keybinds['up']:
-                if keys[k]:
-                    self.isJumping = True
-        else:
-            self.isJumping = False
+        for k in keybinds['up']:
+            if keys[k]:
+                self.jumping = True
 
-        if self.isJumping == True:
-            if self.force > 0:
+        if self.jumping:
+            if self.force >= 0:
                 F = (0.5 * self.mass * self.force ** 2)
                 self.coordinates[1] -= F
                 self.force -= 1
 
             else:
-                self.isJumping = False
+                self.jumping = False
 
-        if self.isJumping == False:
+        else:
             self.currentJumpingFrame = 0
 
-        if changeWalkingFrame == True:
-            if self.currentWalkingFrame + 1 >= self.walkingFrames:
-                self.currentWalkingFrame = 0
-            else:
-                self.currentWalkingFrame += 1
-
-            #TODO self.image uit deze loop halen
-            if self.isJumping == False:
-                self.image = self.walkingImages[self.currentWalkingFrame]
-
-            else:
+        if walking:
+            if self.jumping:
                 if self.currentJumpingFrame + 1 < self.jumpingFrames:
                     self.currentJumpingFrame += 1
 
                 self.image = self.jumpingImages[self.currentJumpingFrame]
 
+            else:
+                if self.currentWalkingFrame + 1 >= self.walkingFrames:
+                    self.currentWalkingFrame = 0
+
+                else:
+                    self.currentWalkingFrame += 1
+
+                self.image = self.walkingImages[self.currentWalkingFrame]
+
         else:
             if self.currentIdleFrame + 1 >= self.idleFrames:
                 self.currentIdleFrame = 0
+
             else:
                 self.currentIdleFrame += 1
 
@@ -276,7 +273,6 @@ while main:
         world.blit(f.image, f.coordinates)
 
     for p in players:
-        p.possibleMovements = ['left', 'right', 'down', 'up']
         onFloor = False
 
         #check if the player is on the floor
@@ -286,8 +282,7 @@ while main:
 
             if collision:
                 #player cannot move towards the collision site anymore and stops jumping
-                p.possibleMovements.remove(collisionSite)
-                p.isJumping = False
+                p.jumping = False
 
                 #when collision occurs, make sure the player does not get in the object
                 if collisionSite == 'down':
@@ -310,12 +305,12 @@ while main:
         #make sure player does not get below the base floor
         if p.coordinates[1] > base:
             p.coordinates[1] = base - p.size[1]
-            p.isJumping = False
+            p.jumping = False
             onFloor = True
             p.force = p.standardForce
 
         #player falls when not on floor and not jumping
-        if onFloor == False and p.isJumping == False:
+        if onFloor == False and p.jumping == False:
             if p.force > 0:
                 p.force = -1
             else:
